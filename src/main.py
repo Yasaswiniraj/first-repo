@@ -1,26 +1,39 @@
 import tkinter as tk
+from functools import partial
 
 
 # ---------------- Functions ---------------- #
 
-def button_click(value):
-    current = display.get()
+def set_display(value):
+    """Clear display and set new value."""
     display.delete(0, tk.END)
-    display.insert(tk.END, current + value)
+    display.insert(tk.END, str(value))
+
+
+def button_click(value):
+    """Append value to current display."""
+    current = display.get()
+    set_display(current + value)
 
 
 def clear():
-    display.delete(0, tk.END)
+    """Clear the display."""
+    set_display("")
+
+
+def backspace():
+    """Remove last character from display."""
+    current = display.get()
+    set_display(current[:-1])
 
 
 def calculate():
+    """Evaluate the expression in the display."""
     try:
         result = eval(display.get())
-        display.delete(0, tk.END)
-        display.insert(tk.END, result)
-    except:
-        display.delete(0, tk.END)
-        display.insert(tk.END, "Error")
+        set_display(result)
+    except (ValueError, SyntaxError, TypeError, ZeroDivisionError):
+        set_display("Error")
 
 
 # ---------------- Main Window ---------------- #
@@ -42,6 +55,21 @@ display = tk.Entry(
 
 display.pack(fill="x", padx=10, pady=15)
 
+# Bind keyboard events
+root.bind("<Return>", lambda e: calculate())
+root.bind("<BackSpace>", lambda e: backspace())
+root.bind("<Escape>", lambda e: clear())
+
+# Bind number and operator keys
+for i in range(10):
+    root.bind(str(i), lambda e, x=str(i): button_click(x))
+
+root.bind("+", lambda e: button_click("+"))
+root.bind("-", lambda e: button_click("-"))
+root.bind("*", lambda e: button_click("*"))
+root.bind("/", lambda e: button_click("/"))
+root.bind(".", lambda e: button_click("."))
+
 # ---------------- Button Frame ---------------- #
 
 button_frame = tk.Frame(root)
@@ -56,23 +84,28 @@ buttons = [
 
 for row in range(4):
     for col in range(4):
-
         text = buttons[row][col]
 
+        # Determine command and styling
         if text == "=":
             command = calculate
+            bg_color = "#90EE90"
         elif text == "C":
             command = clear
+            bg_color = "#FFB6C6"
         else:
-            command = lambda x=text: button_click(x)
+            command = partial(button_click, text)
+            bg_color = "white"
 
         button = tk.Button(
             button_frame,
             text=text,
             font=("Arial", 18, "bold"),
             command=command,
-            bg="white",
-            activebackground="#dcdcdc"
+            bg=bg_color,
+            activebackground="#dcdcdc",
+            relief=tk.RAISED,
+            bd=2
         )
 
         button.grid(
